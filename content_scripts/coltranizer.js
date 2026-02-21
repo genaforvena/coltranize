@@ -303,6 +303,65 @@
     return result;
   }
 
+  // ── Chord-over-lyrics helpers ───────────────────────────────────────────────
+
+  /**
+   * Returns true when every whitespace-delimited token in the line is a valid
+   * chord name.  Empty / whitespace-only lines return false.
+   */
+  function isChordOnlyLine(line) {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    return trimmed.split(/\s+/).every(t => parseChord(t) !== null);
+  }
+
+  /**
+   * Handles chord-over-lyrics format: text blocks where chord-name lines
+   * alternate with lyric lines (e.g. Ultimate Guitar chord tabs).
+   *
+   * Collects all chords from every chord-only line, treats them as one
+   * progression, applies the standard transformation pipeline, then writes
+   * the result back: the first chord line is replaced with all the transformed
+   * chords; subsequent chord lines are cleared (their content merged into the
+   * first line).  Lyric lines are untouched.
+   *
+   * Returns the modified text, or null if no transformation was applied.
+   */
+  function processChordOverLyricsBlock(text, options) {
+    const lines = text.split(/\r?\n/);
+    const chordLineIndices = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      if (isChordOnlyLine(lines[i])) {
+        chordLineIndices.push(i);
+      }
+    }
+
+    if (chordLineIndices.length === 0) return null;
+
+    // Gather all chord tokens from chord-only lines into a single sequence.
+    const allTokens = chordLineIndices
+      .flatMap(idx => lines[idx].trim().split(/\s+/))
+      .filter(t => t.length > 0);
+
+    if (allTokens.length < 3) return null;
+
+    // Reuse the existing transformation pipeline (handles stats, normalization,
+    // II-V-I detection, expandMajor, passing chords, …).
+    const transformed = processPotentialProgression(allTokens.join(" "), options);
+    if (transformed === null) return null;
+
+    replacementCount++;
+
+    // First chord line → all transformed chords; subsequent chord lines → empty.
+    const resultLines = [...lines];
+    for (let k = 0; k < chordLineIndices.length; k++) {
+      resultLines[chordLineIndices[k]] = k === 0 ? transformed : "";
+    }
+
+    return resultLines.join("\n");
+  }
+
   // ── DOM text scanning ───────────────────────────────────────────────────────
 
   // Extended PROGRESSION_RE matching 3+ consecutive chord tokens
@@ -384,7 +443,7 @@
 
     for (const textNode of textNodes) {
       const original = textNode.nodeValue;
-      const newValue = original.replace(PROGRESSION_RE, (match) => {
+      let newValue = original.replace(PROGRESSION_RE, (match) => {
         const result = processPotentialProgression(match.trim(), options);
         if (result !== null) {
           replacementCount++;
@@ -393,6 +452,17 @@
         }
         return match;
       });
+
+      // Second pass: chord-over-lyrics format (e.g. Ultimate Guitar chord tabs)
+      // where each chord line may have fewer than 3 chords.  Only run when the
+      // first pass found nothing and the text spans multiple lines.
+      if (newValue === original && /\r?\n/.test(original)) {
+        const chordOverLyricsResult = processChordOverLyricsBlock(newValue, options);
+        if (chordOverLyricsResult !== null) {
+          newValue = chordOverLyricsResult;
+        }
+      }
+
       if (newValue !== original) {
         textNode.nodeValue = newValue;
       }
