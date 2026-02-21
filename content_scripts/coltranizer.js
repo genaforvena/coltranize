@@ -33,8 +33,11 @@
 
   // ── Chord parsing ───────────────────────────────────────────────────────────
 
-  // Extended regex supporting a wide range of chord qualities
-  const CHORD_RE = /^([A-G][b#]?)(maj13|maj9|maj7#11|maj7#5|maj7|maj6|mM7|m7b5|m13|m11|m9|m7|m6|m|dim7|dim|aug7|aug|7b9|7#9|7#11|7#5|7b5|7sus4|13|11|9|7|6|maj|M7|M|△7|sus4|sus2|add9)?$/;
+  // Extended regex supporting a wide range of chord qualities, including
+  // slash chords (e.g. Am/G, D7/F#).  The bass note after "/" is captured
+  // in group 3 but is stripped during transformation (Coltrane substitution
+  // produces entirely new harmonies).
+  const CHORD_RE = /^([A-G][b#]?)(maj13|maj9|maj7#11|maj7#5|maj7|maj6|mM7|m7b5|m13|m11|m9|m7|m6|m|dim7|dim|aug7|aug|7b9|7#9|7#11|7#5|7b5|7sus4|13|11|9|7|6|maj|M7|M|△7|sus4|sus2|add9)?(?:\/([A-G][b#]?))?$/;
 
   function parseChord(token) {
     const m = token.match(CHORD_RE);
@@ -371,7 +374,7 @@
     "|maj|M7|M|\u25b37|sus4|sus2|add9)?";
 
   const PROGRESSION_RE = new RegExp(
-    "(?:(?:[A-G][b#]?" + CHORD_QUALITY_PART + ")(?:\\s+|$)){3,}",
+    "(?:(?:[A-G][b#]?" + CHORD_QUALITY_PART + "(?:\\/[A-G][b#]?)?)(?:\\s+|$)){3,}",
     "g"
   );
 
