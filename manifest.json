@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+  "name": "Coltranizer",
+  "version": "1.0.0",
+  "description": "Replaces II-V-I chord progressions on web pages with Coltrane changes.",
+  "icons": {
+    "48": "icons/icon-48.png"
+  },
+  "browser_action": {
+    "default_icon": "icons/icon-48.png",
+    "default_popup": "popup/popup.html",
+    "default_title": "Coltranizer"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_scripts/coltranizer.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "coltranizer@coltranize",
+      "strict_min_version": "58.0"
+    }
+  }
+}

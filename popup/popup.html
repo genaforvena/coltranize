@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coltranizer</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <span class="logo">🎸</span>
+    <h1>Coltranizer</h1>
+  </header>
+
+  <p class="description">
+    Finds II&#8209;V&#8209;I progressions on this page and replaces them
+    with <em>Coltrane changes</em>.
+  </p>
+
+  <div id="status" class="status hidden"></div>
+
+  <div class="actions">
+    <button id="btnColtranize" class="btn btn-primary">⚡ Coltranize!</button>
+    <button id="btnRestore" class="btn btn-secondary">↺ Restore original</button>
+  </div>
+
+  <section class="settings">
+    <label>
+      <input type="checkbox" id="chkAutoDetect" checked />
+      Auto-detect II&#8209;V&#8209;I
+    </label>
+    <label>
+      <input type="checkbox" id="chkMaj7" checked />
+      Use maj7 chords
+    </label>
+  </section>
+
+  <footer>
+    <details>
+      <summary>About</summary>
+      <p>
+        Coltranizer applies the harmonic substitution system popularised by
+        John Coltrane ("Coltrane changes") to chord progressions found in any
+        web page — tabs, lyrics, sheet music — and lets you hear the music in
+        a new light.
+      </p>
+      <p>v1.0.0 &mdash; <a href="https://github.com/genaforvena/coltranize" target="_blank" rel="noopener">Source</a></p>
+    </details>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
