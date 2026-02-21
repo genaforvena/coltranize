@@ -106,6 +106,52 @@
   // ── DOM text scanning ───────────────────────────────────────────────────────
 
   /**
+   * Returns all text nodes (with their selected offsets) that fall within
+   * the given Range. For each node the `start` and `end` indices describe
+   * which portion of `node.nodeValue` is covered by the selection.
+   */
+  function getTextNodesInRange(range) {
+    const result = [];
+    const { startContainer, startOffset, endContainer, endOffset } = range;
+
+    // Fast path: entire selection is inside a single text node
+    if (startContainer === endContainer &&
+        startContainer.nodeType === Node.TEXT_NODE) {
+      result.push({ node: startContainer, start: startOffset, end: endOffset });
+      return result;
+    }
+
+    const walker = document.createTreeWalker(
+      range.commonAncestorContainer,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT") {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return range.intersectsNode(node)
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_SKIP;
+        }
+      }
+    );
+
+    let node;
+    while ((node = walker.nextNode())) {
+      const start = node === startContainer ? startOffset : 0;
+      const end   = node === endContainer   ? endOffset   : node.nodeValue.length;
+      if (start < end) {
+        result.push({ node, start, end });
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Attempt to coltranize a whitespace-delimited run of tokens.
    * Returns the replacement string or null if no II-V-I was found.
    */
@@ -147,49 +193,64 @@
   let replacementCount = 0;
   let originalHTML = null;
 
-  function replaceProgressions(useMaj7, autoDetect) {
+  /**
+   * Processes only the text the user has currently selected on the page.
+   * Returns { count } on success or { count: 0, noSelection: true } when
+   * nothing is selected.
+   */
+  function replaceInSelection(useMaj7, autoDetect) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+      return { count: 0, noSelection: true };
+    }
+
     replacementCount = 0;
 
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node) {
-          const parent = node.parentElement;
-          if (!parent) return NodeFilter.FILTER_REJECT;
-          const tag = parent.tagName.toUpperCase();
-          if (tag === "SCRIPT" || tag === "STYLE" || tag === "NOSCRIPT") {
-            return NodeFilter.FILTER_REJECT;
+    // Collect all modifications first so that changing one text node's value
+    // does not invalidate the offsets captured for another range on the same node.
+    // Each entry: { node, start, end }
+    const modifications = [];
+
+    for (let ri = 0; ri < sel.rangeCount; ri++) {
+      const range = sel.getRangeAt(ri);
+      for (const segment of getTextNodesInRange(range)) {
+        modifications.push(segment);
+      }
+    }
+
+    // Group by node and sort each group by descending start offset so that
+    // applying replacements back-to-front keeps earlier offsets valid.
+    const byNode = new Map();
+    for (const seg of modifications) {
+      if (!byNode.has(seg.node)) byNode.set(seg.node, []);
+      byNode.get(seg.node).push(seg);
+    }
+
+    for (const [node, segs] of byNode) {
+      // Apply from the end of the text node toward the beginning
+      segs.sort((a, b) => b.start - a.start);
+
+      for (const { start, end } of segs) {
+        const original     = node.nodeValue;
+        const selectedPart = original.substring(start, end);
+
+        const replaced = selectedPart.replace(PROGRESSION_RE, (match) => {
+          const result = processPotentialProgression(match.trim(), useMaj7, autoDetect);
+          if (result) {
+            replacementCount++;
+            const trailingWS = match.match(/\s+$/);
+            return result + (trailingWS ? trailingWS[0] : "");
           }
-          return NodeFilter.FILTER_ACCEPT;
-        }
-      }
-    );
+          return match;
+        });
 
-    const textNodes = [];
-    let node;
-    while ((node = walker.nextNode())) {
-      textNodes.push(node);
-    }
-
-    for (const textNode of textNodes) {
-      const original = textNode.nodeValue;
-      let replaced = original.replace(PROGRESSION_RE, (match) => {
-        const result = processPotentialProgression(match.trim(), useMaj7, autoDetect);
-        if (result) {
-          replacementCount++;
-          // Preserve trailing whitespace from match
-          const trailingWS = match.match(/\s+$/) ? match.match(/\s+$/)[0] : "";
-          return result + trailingWS;
+        if (replaced !== selectedPart) {
+          node.nodeValue = original.substring(0, start) + replaced + original.substring(end);
         }
-        return match;
-      });
-      if (replaced !== original) {
-        textNode.nodeValue = replaced;
       }
     }
 
-    return replacementCount;
+    return { count: replacementCount };
   }
 
   // ── Message handler ─────────────────────────────────────────────────────────
@@ -199,11 +260,11 @@
       if (!originalHTML) {
         originalHTML = document.body.innerHTML;
       }
-      const count = replaceProgressions(
+      const result = replaceInSelection(
         message.useMaj7 !== false,
         message.autoDetect !== false
       );
-      sendResponse({ count });
+      sendResponse(result);
     } else if (message.action === "restore") {
       if (originalHTML !== null) {
         // We restore the HTML we captured from this same page before any

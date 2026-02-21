@@ -57,9 +57,11 @@ btnColtranize.addEventListener("click", () => {
     useMaj7:    chkMaj7.checked,
   })
     .then((response) => {
-      if (response && typeof response.count === "number") {
+      if (response && response.noSelection) {
+        showStatus("Select chord text on the page first, then click Coltranize!", "info");
+      } else if (response && typeof response.count === "number") {
         if (response.count === 0) {
-          showStatus("No II–V–I progressions found on this page.", "info");
+          showStatus("No II–V–I progressions found in the selected text.", "info");
         } else {
           showStatus(
             `✓ Replaced ${response.count} progression${response.count === 1 ? "" : "s"}!`,
