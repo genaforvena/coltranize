@@ -319,6 +319,19 @@
   }
 
   /**
+   * Returns true when a line uses pipe/bar notation for chords, i.e. it
+   * contains at least one "|" and after stripping all "|" characters the only
+   * non-whitespace tokens are valid chord names.
+   * Empty bar lines such as "|  |    |  |    |" return false.
+   */
+  function isBarNotationLine(line) {
+    if (!line.includes('|')) return false;
+    const stripped = line.replace(/\|/g, ' ').trim();
+    if (!stripped) return false;
+    return stripped.split(/\s+/).every(t => parseChord(t) !== null);
+  }
+
+  /**
    * Handles chord-over-lyrics format: text blocks where chord-name lines
    * alternate with lyric lines (e.g. Ultimate Guitar chord tabs).
    *
@@ -446,7 +459,17 @@
 
     for (const textNode of textNodes) {
       const original = textNode.nodeValue;
-      let newValue = original.replace(PROGRESSION_RE, (match) => {
+
+      // Normalise pipe/bar notation lines so PROGRESSION_RE can match chords
+      // that are separated by "|" characters.
+      // e.g. "| Fmaj7   | Em      | A       |" → "  Fmaj7     Em       A       "
+      const normalized = /\|/.test(original)
+        ? original.split(/\r?\n/).map(line =>
+            isBarNotationLine(line) ? line.replace(/\|/g, ' ') : line
+          ).join('\n')
+        : original;
+
+      let newValue = normalized.replace(PROGRESSION_RE, (match) => {
         const result = processPotentialProgression(match.trim(), options);
         if (result !== null) {
           replacementCount++;
@@ -459,14 +482,14 @@
       // Second pass: chord-over-lyrics format (e.g. Ultimate Guitar chord tabs)
       // where each chord line may have fewer than 3 chords.  Only run when the
       // first pass found nothing and the text spans multiple lines.
-      if (newValue === original && /\r?\n/.test(original)) {
+      if (newValue === normalized && /\r?\n/.test(normalized)) {
         const chordOverLyricsResult = processChordOverLyricsBlock(newValue, options);
         if (chordOverLyricsResult !== null) {
           newValue = chordOverLyricsResult;
         }
       }
 
-      if (newValue !== original) {
+      if (newValue !== normalized) {
         textNode.nodeValue = newValue;
       }
     }
