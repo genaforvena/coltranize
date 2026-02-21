@@ -61,7 +61,25 @@
   }
 
   function isStableQuality(quality) {
-    return isMajorQuality(quality) || isMinorQuality(quality);
+    // Include "7" so that normalised plain-major chords (→ 7) can act as tonic
+    return isMajorQuality(quality) || isMinorQuality(quality) || quality === "7";
+  }
+
+  /**
+   * Upgrade simple/bare chord qualities to their 7th equivalents so they can
+   * participate in II-V-I detection and transformation.
+   *   plain major ("")  → "7"   (acts as dominant / blues I7)
+   *   plain minor ("m") → "m7"
+   *   "maj" / "M"       → "maj7"
+   */
+  function normalizeSimpleChord(chord) {
+    switch (chord.quality) {
+      case "":    return { root: chord.root, quality: "7" };
+      case "m":   return { root: chord.root, quality: "m7" };
+      case "maj": return { root: chord.root, quality: "maj7" };
+      case "M":   return { root: chord.root, quality: "maj7" };
+      default:    return chord;
+    }
   }
 
   // ── Transform strategies ────────────────────────────────────────────────────
@@ -317,7 +335,11 @@
     totalChordsCount += parsed.length;
     progressionsCount++;
 
-    const result = applyTransformationToSequence(parsed, options);
+    // Upgrade simple bare chords (plain major/minor) to 7th equivalents so
+    // they can participate in II-V-I detection and transformation.
+    const normalized = parsed.map(normalizeSimpleChord);
+
+    const result = applyTransformationToSequence(normalized, options);
     if (!result) return null;
 
     let final = result;
