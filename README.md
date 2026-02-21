@@ -25,14 +25,71 @@ Result: Dm7  Ab7 Dbmaj7  E7 Amaj7  G7 Cmaj7
 
 One click restores the original page text.
 
-## Installation
+## Installation & testing
 
-1. Download or clone this repository.
-2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on…** and select the `manifest.json` file inside this folder.
-4. The 🎸 icon appears in your toolbar.
+### Option A — Load temporarily (no sign-up required)
 
-> For a permanent install, the extension can be packaged and submitted to [addons.mozilla.org](https://addons.mozilla.org).
+This is the quickest way to try the extension on your own machine. The add-on is removed when Firefox is closed.
+
+1. Clone or download this repository.
+2. Open Firefox and go to **`about:debugging#/runtime/this-firefox`**.
+3. Click **Load Temporary Add-on…**.
+4. Navigate to the repository folder and select **`manifest.json`**.
+5. The 🎸 icon appears in your toolbar immediately.
+
+### Option B — Permanent local install with `web-ext`
+
+[`web-ext`](https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/) is Mozilla's official CLI tool. It hot-reloads the extension on file changes, making local development much smoother.
+
+```bash
+# Install web-ext globally (requires Node.js)
+npm install --global web-ext
+
+# From the repository root, start Firefox with the extension loaded
+web-ext run
+
+# Or target a specific Firefox binary
+web-ext run --firefox /path/to/firefox
+```
+
+`web-ext run` opens a fresh Firefox profile with the extension pre-installed and reloads it automatically whenever you save a file.
+
+#### Lint before packaging
+
+```bash
+web-ext lint
+```
+
+This validates `manifest.json` and the extension source against Mozilla's rules and catches common mistakes before you submit.
+
+### Option C — Publish to addons.mozilla.org (AMO)
+
+Publishing makes the extension available to everyone and enables automatic updates.
+
+1. **Create a developer account** at [addons.mozilla.org/developers](https://addons.mozilla.org/en-US/developers/).
+
+2. **Package the extension:**
+   ```bash
+   web-ext build
+   # Creates web-ext-artifacts/coltranizer-<version>.zip
+   ```
+
+3. **Submit for review:**
+   - Go to [Submit a new add-on](https://addons.mozilla.org/en-US/developers/addon/submit/distribution) on AMO.
+   - Choose **List on this site** (public) or **On your own** (self-distributed).
+   - Upload the `.zip` produced in the previous step.
+   - Fill in the listing details (name, description, screenshots, category).
+   - Submit — Mozilla's review team will approve the extension (typically within a few days for straightforward extensions).
+
+4. **Self-distribution (signed `.xpi` without AMO listing):**
+   ```bash
+   # Requires AMO API credentials — see
+   # https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/#sign-a-web-extension
+   web-ext sign --api-key=<jwt-issuer> --api-secret=<jwt-secret>
+   # Produces a signed .xpi that can be installed via drag-and-drop into Firefox
+   ```
+
+> **Note:** Firefox requires all extensions to be signed by Mozilla before they can be permanently installed in release builds. Unsigned extensions only work in Firefox Developer Edition / Nightly with `xpinstall.signatures.required` set to `false` in `about:config`.
 
 ## Usage
 
