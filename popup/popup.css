@@ -1,4 +1,4 @@
-/* Coltranizer popup styles */
+/* Harmony Alchemist popup styles */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -34,11 +34,25 @@ h1 {
   letter-spacing: 0.5px;
 }
 
-.description {
-  font-size: 12px;
+/* Statistics bar */
+.stats {
+  display: flex;
+  justify-content: space-between;
+  background: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  font-size: 11px;
   color: #9e9eb8;
-  margin-bottom: 14px;
-  line-height: 1.5;
+}
+
+.stats strong {
+  color: #f5a623;
+}
+
+.stats.hidden {
+  display: none;
 }
 
 /* Status banner */
@@ -69,6 +83,73 @@ h1 {
 .status.info {
   border-color: #9e9eb8;
   color: #9e9eb8;
+}
+
+/* Settings */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setting-group h2 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f5a623;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #9e9eb8;
+  cursor: pointer;
+  user-select: none;
+}
+
+.settings label.radio-label {
+  padding: 2px 0;
+}
+
+.settings input[type="checkbox"],
+.settings input[type="radio"] {
+  accent-color: #f5a623;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Intensity slider */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-label {
+  font-size: 11px;
+  color: #6e6e8e;
+  white-space: nowrap;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+  accent-color: #f5a623;
+  height: 4px;
+  cursor: pointer;
 }
 
 /* Buttons */
@@ -117,31 +198,6 @@ h1 {
 .btn-secondary:hover:not(:disabled) {
   background: #1f2f5a;
   color: #c0c0d8;
-}
-
-/* Settings */
-.settings {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.settings label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #9e9eb8;
-  cursor: pointer;
-  user-select: none;
-}
-
-.settings input[type="checkbox"] {
-  accent-color: #f5a623;
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
 }
 
 /* Footer / About */

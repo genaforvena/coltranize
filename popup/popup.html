@@ -3,48 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Coltranizer</title>
+  <title>Harmony Alchemist</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <header>
     <span class="logo">🎸</span>
-    <h1>Coltranizer</h1>
+    <h1>Harmony Alchemist</h1>
   </header>
 
-  <p class="description">
-    Select chord progressions on the page, then click <strong>Coltranize!</strong>
-    to apply <em>Coltrane changes</em> to the selected text.
-  </p>
+  <div id="stats" class="stats hidden">
+    <span>Chords: <strong id="statChords">-</strong></span>
+    <span>Progressions: <strong id="statProgressions">-</strong></span>
+    <span>Replaced: <strong id="statReplaced">-</strong></span>
+  </div>
 
   <div id="status" class="status hidden"></div>
 
-  <div class="actions">
-    <button id="btnColtranize" class="btn btn-primary">⚡ Coltranize!</button>
-    <button id="btnRestore" class="btn btn-secondary">↺ Restore original</button>
-  </div>
-
   <section class="settings">
-    <label>
-      <input type="checkbox" id="chkAutoDetect" checked />
-      Auto-detect II&#8209;V&#8209;I
-    </label>
-    <label>
-      <input type="checkbox" id="chkMaj7" checked />
-      Use maj7 chords
-    </label>
+    <div class="setting-group">
+      <h2>🎛️ Transform mode</h2>
+      <label class="radio-label">
+        <input type="radio" name="strategy" value="COLTRANE_CLASSIC" checked />
+        🎷 Coltrane (Classic)
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="strategy" value="PRESERVE_QUALITY" />
+        🌈 Preserve Quality
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="strategy" value="JAZZ_FUSION" />
+        🔥 Jazz Fusion
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="strategy" value="ALCHEMY" />
+        ⚗️ Alchemy (experimental)
+      </label>
+    </div>
+
+    <div class="setting-group">
+      <h2>🔧 Options</h2>
+      <label>
+        <input type="checkbox" id="chkMaj7" checked />
+        Use maj7 chords
+      </label>
+      <label>
+        <input type="checkbox" id="chkAddPassing" />
+        Add passing chords
+      </label>
+      <label>
+        <input type="checkbox" id="chkExpandMajor" />
+        Expand all stable chords
+      </label>
+    </div>
+
+    <div class="setting-group">
+      <h2>⚡ Intensity</h2>
+      <div class="slider-row">
+        <span class="slider-label">Soft</span>
+        <input type="range" id="rngIntensity" min="0" max="100" value="50" />
+        <span class="slider-label">Wild</span>
+      </div>
+    </div>
   </section>
+
+  <div class="actions">
+    <button id="btnColtranize" class="btn btn-primary">✨ Transform!</button>
+    <button id="btnRestore" class="btn btn-secondary">↺ Reset</button>
+  </div>
 
   <footer>
     <details>
       <summary>About</summary>
       <p>
-        Coltranizer applies the harmonic substitution system popularised by
-        John Coltrane ("Coltrane changes") to chord progressions found in any
-        web page — tabs, lyrics, sheet music — and lets you hear the music in
-        a new light.
+        Harmony Alchemist applies Coltrane-inspired harmonic transformations to
+        chord progressions found on any web page — tabs, lyrics, sheet music.
+        Like an alchemist turning lead into gold, it transforms simple chord
+        sequences into something more interesting and jazzy.
       </p>
-      <p>v1.0.0 &mdash; <a href="https://github.com/genaforvena/coltranize" target="_blank" rel="noopener">Source</a></p>
+      <p>v2.0.0 &mdash; <a href="https://github.com/genaforvena/coltranize" target="_blank" rel="noopener">Source</a></p>
     </details>
   </footer>
 
