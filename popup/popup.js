@@ -1,30 +1,53 @@
-/* Coltranizer popup script */
+/* Harmony Alchemist popup script */
 "use strict";
 
 const btnColtranize  = document.getElementById("btnColtranize");
 const btnRestore     = document.getElementById("btnRestore");
-const chkAutoDetect  = document.getElementById("chkAutoDetect");
 const chkMaj7        = document.getElementById("chkMaj7");
+const chkAddPassing  = document.getElementById("chkAddPassing");
+const chkExpandMajor = document.getElementById("chkExpandMajor");
+const rngIntensity   = document.getElementById("rngIntensity");
 const statusEl       = document.getElementById("status");
+const statsEl        = document.getElementById("stats");
+const statChords     = document.getElementById("statChords");
+const statProgressions = document.getElementById("statProgressions");
+const statReplaced   = document.getElementById("statReplaced");
 
 // ── Persist settings ──────────────────────────────────────────────────────────
 
 function loadSettings() {
-  browser.storage.local.get({ autoDetect: true, useMaj7: true }).then((settings) => {
-    chkAutoDetect.checked = settings.autoDetect;
-    chkMaj7.checked       = settings.useMaj7;
+  browser.storage.local.get({
+    strategy:    "COLTRANE_CLASSIC",
+    useMaj7:     true,
+    addPassing:  false,
+    expandMajor: false,
+    intensity:   50,
+  }).then((s) => {
+    const radio = document.querySelector(`input[name="strategy"][value="${s.strategy}"]`);
+    if (radio) radio.checked = true;
+    chkMaj7.checked        = s.useMaj7;
+    chkAddPassing.checked  = s.addPassing;
+    chkExpandMajor.checked = s.expandMajor;
+    rngIntensity.value     = s.intensity;
   });
 }
 
 function saveSettings() {
+  const strategyRadio = document.querySelector('input[name="strategy"]:checked');
   browser.storage.local.set({
-    autoDetect: chkAutoDetect.checked,
-    useMaj7:    chkMaj7.checked,
+    strategy:    strategyRadio ? strategyRadio.value : "COLTRANE_CLASSIC",
+    useMaj7:     chkMaj7.checked,
+    addPassing:  chkAddPassing.checked,
+    expandMajor: chkExpandMajor.checked,
+    intensity:   parseInt(rngIntensity.value, 10),
   });
 }
 
-chkAutoDetect.addEventListener("change", saveSettings);
+document.querySelectorAll('input[name="strategy"]').forEach(r => r.addEventListener("change", saveSettings));
 chkMaj7.addEventListener("change", saveSettings);
+chkAddPassing.addEventListener("change", saveSettings);
+chkExpandMajor.addEventListener("change", saveSettings);
+rngIntensity.addEventListener("input", saveSettings);
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
 
@@ -35,6 +58,17 @@ function showStatus(text, type = "info") {
 
 function hideStatus() {
   statusEl.className = "status hidden";
+}
+
+function showStats(totalChords, progressions, replaced) {
+  statChords.textContent      = totalChords;
+  statProgressions.textContent = progressions;
+  statReplaced.textContent    = replaced;
+  statsEl.classList.remove("hidden");
+}
+
+function hideStats() {
+  statsEl.classList.add("hidden");
 }
 
 // ── Send message to active tab's content script ────────────────────────────────
@@ -50,21 +84,30 @@ function sendToTab(message) {
 
 btnColtranize.addEventListener("click", () => {
   btnColtranize.disabled = true;
+  hideStats();
+
+  const strategyRadio = document.querySelector('input[name="strategy"]:checked');
 
   sendToTab({
-    action:     "coltranize",
-    autoDetect: chkAutoDetect.checked,
-    useMaj7:    chkMaj7.checked,
+    action:      "coltranize",
+    strategy:    strategyRadio ? strategyRadio.value : "COLTRANE_CLASSIC",
+    useMaj7:     chkMaj7.checked,
+    addPassing:  chkAddPassing.checked,
+    expandMajor: chkExpandMajor.checked,
+    intensity:   parseInt(rngIntensity.value, 10),
   })
     .then((response) => {
-      if (response && response.noSelection) {
-        showStatus("Select chord text on the page first, then click Coltranize!", "info");
-      } else if (response && typeof response.count === "number") {
+      if (response && typeof response.count === "number") {
+        showStats(
+          response.totalChords  || 0,
+          response.progressions || 0,
+          response.count
+        );
         if (response.count === 0) {
-          showStatus("No II–V–I progressions found in the selected text.", "info");
+          showStatus("No transformable progressions found on the page.", "info");
         } else {
           showStatus(
-            `✓ Replaced ${response.count} progression${response.count === 1 ? "" : "s"}!`,
+            `✓ Transformed ${response.count} progression${response.count === 1 ? "" : "s"}!`,
             "success"
           );
         }
@@ -84,6 +127,7 @@ btnRestore.addEventListener("click", () => {
   sendToTab({ action: "restore" })
     .then(() => {
       hideStatus();
+      hideStats();
     })
     .catch((err) => {
       showStatus(`Error: ${err.message}`, "error");
